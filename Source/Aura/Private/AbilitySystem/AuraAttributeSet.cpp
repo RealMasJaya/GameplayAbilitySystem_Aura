@@ -164,22 +164,37 @@ void UAuraAttributeSet::HandleIncomingDamage(const FEffectProperties& Props)
 		SetHealth(FMath::Clamp(NewHealth, 0.f, GetMaxHealth()));
 
 		const bool bFatal = NewHealth <= 0.f;
+		ICombatInterface* CombatInterface = Cast<ICombatInterface>(Props.TargetAvatarActor);
 		if (bFatal)
 		{
-			//TODO: Use Death Impulse!
-			
-			ICombatInterface* CombatInterface = Cast<ICombatInterface>(Props.TargetAvatarActor);
 			if (CombatInterface)
 			{
-				CombatInterface->Die();
+				CombatInterface->Die(UAuraAbilitySystemLibrary::GetDeathImpulse(Props.EffectContextHandle));
 			}
 			SendXPEvent(Props);
+
+			/* From Comment(Lucas) Video 314 to stop burn after death */
+			if (UAbilitySystemComponent* ASC = GetOwningAbilitySystemComponent())
+			{
+				ASC->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer({FAuraGameplayTags::Get().Debuff_Burn}));
+			}
+			/* From Comment(Lucas) Video 314 to stop burn after death */
 		}
 		else
 		{
 			FGameplayTagContainer TagContainer;
 			TagContainer.AddTag(FAuraGameplayTags::Get().Effects_HitReact);
 			Props.TargetASC->TryActivateAbilitiesByTag(TagContainer);
+
+			const FVector& KnockbackForce = UAuraAbilitySystemLibrary::GetKnockbackForce(Props.EffectContextHandle);
+			if (KnockbackForce.Length() > 1.0f)
+			{
+				if (CombatInterface)
+				{
+					CombatInterface->Knockback(KnockbackForce);
+				}
+				Props.TargetCharacter->LaunchCharacter(KnockbackForce, true, true);
+			}
 		}
 		
 		const bool bBlock = UAuraAbilitySystemLibrary::IsBlockedHit(Props.EffectContextHandle);
