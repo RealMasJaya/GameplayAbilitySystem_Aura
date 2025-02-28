@@ -13,6 +13,7 @@ class UNiagaraSystem;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnASCRegistered, UAbilitySystemComponent*)
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeath, AActor*, DeadActor);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeathSignature, AActor*, DeadActor);
 
 USTRUCT(BlueprintType)
 struct FTaggedMontage
@@ -61,6 +62,7 @@ public:
 	UAnimMontage* GetHitReactMontage();
 
 	virtual void Die(const FVector& DeathImpulse) = 0;
+	virtual FOnDeathSignature& GetOnDeathSignatureDelegate() = 0;
 
 	virtual void Knockback(const FVector& Force) = 0;
 
